@@ -1,4 +1,4 @@
-FROM openjdk:11
+FROM ubuntu
 
 # Set default timezone
 ENV TZ=Europe/Moscow
