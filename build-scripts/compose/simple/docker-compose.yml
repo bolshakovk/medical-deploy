@@ -3,11 +3,6 @@ version: '2.4'
 services:
   message-analyzer:
     image: application/message-analyzer:simple
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
-      interval: 20s
-      timeout: 10s
-      retries: 3
     environment:
       SERVER_PORT: 8081
     ports:
@@ -17,12 +12,7 @@ services:
     image: application/medical-monitoring:simple
     depends_on:
       message-analyzer:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8082/actuator/health"]
-      interval: 20s
-      timeout: 10s
-      retries: 3
+        condition: service_started
     environment:
       SERVER_PORT: 8082
     ports:
@@ -32,28 +22,16 @@ services:
     image: application/person-service:simple
     depends_on:
       message-analyzer:
-        condition: service_healthy
+        condition: service_started
       medical-monitoring:
-        condition: service_healthy
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8083/actuator/health" ]
-      interval: 20s
-      timeout: 10s
-      retries: 3
+        condition: service_started
     environment:
       SERVER_PORT: 8083
     ports:
       - 8091:8080
 
   rabbit-mq:
-    image: application/
-    depends_on:
-      medical-monitoring:
-        condition: service_started
-      message-analyzer:
-        condition: service_started
-      person-service:
-        condition: service_started
+    image: rabbitmq
 
   postgres:
     image: postgres:latest
