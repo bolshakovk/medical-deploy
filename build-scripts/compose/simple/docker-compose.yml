@@ -3,6 +3,9 @@ version: '2.4'
 services:
   message-analyzer:
     image: application/message-analyzer:simple
+    depends_on:
+      rabbit-mq:
+        condition: service_healthy
     environment:
       SERVER_PORT: 8081
     ports:
@@ -12,7 +15,11 @@ services:
     image: application/medical-monitoring:simple
     depends_on:
       message-analyzer:
-        condition: service_started
+        condition: service_healthy
+    healthcheck:
+      interval: 50s
+      timeout: 10s
+      retries: 2
     environment:
       SERVER_PORT: 8082
     ports:
@@ -22,9 +29,9 @@ services:
     image: application/person-service:simple
     depends_on:
       message-analyzer:
-        condition: service_started
+        condition: service_healthy
       medical-monitoring:
-        condition: service_started
+        condition: service_healthy
     environment:
       SERVER_PORT: 8083
     ports:
@@ -32,12 +39,17 @@ services:
 
   rabbit-mq:
     image: rabbitmq
+    healthcheck:
+      test: rabbitmq-diagnostics check_port_connectivity
+      interval: 50s
+      timeout: 5s
+      retries: 2
 
   postgres:
     image: postgres:latest
     environment:
-      POSTGRES_DB: "ligadb"
-      POSTGRES_USER: "ligauser"
-      POSTGRES_PASSWORD: "root"
+      POSTGRES_DB: ligadb
+      POSTGRES_USER: ligauser
+      POSTGRES_PASSWORD: root
     ports:
       - "5432:5432"
